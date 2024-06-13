@@ -85,7 +85,7 @@ Fetches various information, logs it, and posts it to BlueSky.
 3. Run the script as shown below:
 
 ```sh
-python post2bsky_bot.py
+python post2bsky.py
 ```
 
 ## Usage Example
