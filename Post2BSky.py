@@ -57,8 +57,17 @@ class BlueSkyBot:
             str: 為替情報の文字列
         """
         ticker = yf.Ticker("USDJPY=X")
-        info = ticker.info
-        return f"為替情報=\n始:{info['open']}\n高:{info['dayHigh']}\n安:{info['dayLow']}\n終:{info['previousClose']}\n"
+        history = ticker.history(period="1d")
+    
+        if not history.empty:
+            open_price = history['Open'].iloc[0]
+            high_price = history['High'].iloc[0]
+            low_price = history['Low'].iloc[0]
+            close_price = history['Close'].iloc[0]
+        else:
+            open_price = high_price = low_price = close_price = 'データなし'
+
+        return f"為替情報\n始:{open_price}\n高:{high_price}\n安:{low_price}\n終:{close_price}\n"
 
     def fetch_weather(self):
         """
@@ -142,7 +151,7 @@ class BlueSkyBot:
         Args:
             message (str): 投稿するメッセージ
         """
-        self.api_client.send_post('{:.300}'.format(message))
+        #self.api_client.send_post('{:.300}'.format(message))
 
     def run(self):
         """
