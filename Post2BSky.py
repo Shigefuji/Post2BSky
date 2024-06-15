@@ -151,7 +151,7 @@ class BlueSkyBot:
         Args:
             message (str): 投稿するメッセージ
         """
-        #self.api_client.send_post('{:.300}'.format(message))
+        self.api_client.send_post('{:.300}'.format(message))
 
     def run(self):
         """
