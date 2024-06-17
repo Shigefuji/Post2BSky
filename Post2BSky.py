@@ -47,7 +47,7 @@ class BlueSkyBot:
             int: 記録後の行数
         """
         self.worksheet.append_row([timestamp, message])
-        return self.worksheet.row_count
+        return len(self.worksheet.col_values(1))
 
     def fetch_exchange_rate(self):
         """
@@ -60,10 +60,10 @@ class BlueSkyBot:
         history = ticker.history(period="1d")
     
         if not history.empty:
-            open_price = history['Open'].iloc[0]
-            high_price = history['High'].iloc[0]
-            low_price = history['Low'].iloc[0]
-            close_price = history['Close'].iloc[0]
+            open_price = round(history['Open'].iloc[0], 3)
+            high_price = round(history['High'].iloc[0], 3)
+            low_price = round(history['Low'].iloc[0], 3)
+            close_price = round(history['Close'].iloc[0], 3)
         else:
             open_price = high_price = low_price = close_price = 'データなし'
 
