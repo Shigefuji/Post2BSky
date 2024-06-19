@@ -169,12 +169,11 @@ class BlueSkyBot:
             try:
                 japanese_quote_message = self.generate_description(self.fetch_japanese_quote(), "ポジティブな言葉で元気が出る解説をしてください。質問の言葉を解答から除いてください")
             except Exception as e:
-                pass  
+                print("Retry:Generate description\n")
             else:
                 break 
         else:
             japanese_quote_message = "今日は何もない日ですが、特別な一日です。元気を出して行きましょう！"
-            pass
 
         for message in [weather_message, exchange_rate_message, english_quote_message, trends_message, japanese_quote_message]:
             print("Postlog No:", self.log_to_gspread(timestamp, message), "\n")
