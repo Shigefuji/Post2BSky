@@ -140,7 +140,7 @@ class BlueSkyBot:
         Returns:
             str: 解説の文字列
         """
-        prompt = f"{term}について200文字以内で説明してください。 {additional_instructions}"
+        prompt = f"{term}について500文字以内で説明してください。 {additional_instructions}"
         response = self.gemini_model.generate_content(prompt)
         return f"【{term} について】\n{response.text}\n"
 
@@ -151,7 +151,9 @@ class BlueSkyBot:
         Args:
             message (str): 投稿するメッセージ
         """
-        self.api_client.send_post('{:.300}'.format(message))
+        for i in range(0, len(message), 300):
+            partial_message = message[i:i + 300]
+            self.api_client.send_post(partial_message)
 
     def run(self):
         """
