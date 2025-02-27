@@ -8,6 +8,7 @@ import google.generativeai as genai
 import yfinance as yf
 from pytrends.request import TrendReq
 from atproto import Client
+import feedparser
 
 class BlueSkyBot:
     def __init__(self, config_file):
@@ -21,10 +22,11 @@ class BlueSkyBot:
             self.config = json.load(file)
         self.api_client = Client(base_url='https://bsky.social')
         self.api_client.login(self.config['username'], self.config['password'])
-        self.trends_client = TrendReq(hl='ja-JP', tz=-540)
+        #self.trends_client = TrendReq(hl='ja-JP', tz=-540)
         self.translator = deepl.Translator(self.config['deepl_api_key'])
         genai.configure(api_key=self.config['gemini_api_key'])
-        self.gemini_model = genai.GenerativeModel("gemini-pro")
+        self.gemini_model = genai.GenerativeModel("gemini-1.5-flash") 
+        """("gemini-pro")"""
 
     def connect_to_gspread(self):
         """
@@ -89,8 +91,17 @@ class BlueSkyBot:
         Returns:
             str: トレンド情報の文字列
         """
-        trends_data = self.trends_client.trending_searches(pn='japan')
-        return f'\n\nトレンドワード\n{trends_data.head(10).values.flatten().tolist()}\n'
+        url = 'https://trends.google.com/trending/rss?geo=JP'
+        feed = feedparser.parse(url)
+        word = ""
+        for entry in feed.entries:
+            word += entry.title + "\n"
+            #print(entry.title, entry.link)
+
+
+        # trends_data = self.trends_client.trending_searches(pn='japan')
+        #return f'\n\nトレンドワード\n{trends_data.head(10).values.flatten().tolist()}\n'
+        return f'\n\nトレンドワード\n{word}\n'
 
     def fetch_japanese_quote(self):
         """
@@ -176,13 +187,20 @@ class BlueSkyBot:
                 break 
         else:
             japanese_quote_message = "今日は何もない日ですが、特別な一日です。元気を出して行きましょう！"
-
-        for message in [weather_message, exchange_rate_message, english_quote_message, trends_message, japanese_quote_message]:
+    
+        for message in [weather_message, exchange_rate_message, english_quote_message, trends_message , japanese_quote_message]:
+        #for message in [weather_message, exchange_rate_message, english_quote_message, japanese_quote_message]:
             print("Postlog No:", self.log_to_gspread(timestamp, message), "\n")
             self.post_to_bluesky(timestamp + message)
 
-        print(timestamp + weather_message + exchange_rate_message + english_quote_message + trends_message + japanese_quote_message)
-
+        #print(timestamp + weather_message + exchange_rate_message + english_quote_message + trends_message + japanese_quote_message)"""
+        print(timestamp)
+        print(weather_message)
+        print(exchange_rate_message)
+        print(english_quote_message)
+        print(trends_message)
+        print(japanese_quote_message)
+        
 if __name__ == "__main__":
     bot = BlueSkyBot('.env.local')
     bot.run()
