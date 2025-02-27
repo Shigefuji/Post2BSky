@@ -15,16 +15,17 @@ cryptography==42.0.7
 deepl==1.18.0
 dnspython==2.6.1
 exceptiongroup==1.2.1
+feedparser==6.0.11
 frozendict==2.4.4
 gitdb==4.0.11
 GitPython==3.1.43
-google-ai-generativelanguage==0.6.4
+google-ai-generativelanguage==0.6.15
 google-api-core==2.19.0
 google-api-python-client==2.130.0
 google-auth==2.29.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
-google-generativeai==0.5.4
+google-generativeai==0.8.4
 googleapis-common-protos==1.63.0
 grpcio==1.64.0
 grpcio-status==1.62.2
@@ -75,6 +76,8 @@ requests-oauthlib==2.0.0
 rich==13.7.1
 rpds-py==0.18.1
 rsa==4.9
+setuptools==69.0.3
+sgmllib3k==1.0.0
 shortuuid==1.0.13
 six==1.16.0
 smmap==5.0.1
@@ -93,4 +96,5 @@ urllib3==2.2.1
 watchdog==4.0.1
 webencodings==0.5.1
 websockets==12.0
-yfinance==0.2.40
+wheel==0.43.0
+yfinance==0.2.54
