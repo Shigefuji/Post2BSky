@@ -173,7 +173,7 @@ class BlueSkyBot:
         self.connect_to_gspread()
         timestamp = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S") + '\n'
         weather_message = self.fetch_weather()
-        exchange_rate_message = self.fetch_exchange_rate()
+        # exchange_rate_message = self.fetch_exchange_rate() APIが安定しないため当面コメントアウト
         english_quote_message = self.fetch_english_quote()
         trends_message = self.fetch_trending_keywords()
         
