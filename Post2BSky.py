@@ -187,8 +187,9 @@ class BlueSkyBot:
                 break 
         else:
             japanese_quote_message = "今日は何もない日ですが、特別な一日です。元気を出して行きましょう！"
-    
-        for message in [weather_message, exchange_rate_message, english_quote_message, trends_message , japanese_quote_message]:
+
+        for message in [weather_message, english_quote_message, trends_message , japanese_quote_message]:    
+        #for message in [weather_message, exchange_rate_message, english_quote_message, trends_message , japanese_quote_message]:
         #for message in [weather_message, exchange_rate_message, english_quote_message, japanese_quote_message]:
             print("Postlog No:", self.log_to_gspread(timestamp, message), "\n")
             self.post_to_bluesky(timestamp + message)
@@ -196,7 +197,7 @@ class BlueSkyBot:
         #print(timestamp + weather_message + exchange_rate_message + english_quote_message + trends_message + japanese_quote_message)"""
         print(timestamp)
         print(weather_message)
-        print(exchange_rate_message)
+        # print(exchange_rate_message)
         print(english_quote_message)
         print(trends_message)
         print(japanese_quote_message)
