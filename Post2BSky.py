@@ -25,8 +25,45 @@ class BlueSkyBot:
         #self.trends_client = TrendReq(hl='ja-JP', tz=-540)
         self.translator = deepl.Translator(self.config['deepl_api_key'])
         genai.configure(api_key=self.config['gemini_api_key'])
-        self.gemini_model = genai.GenerativeModel("gemini-1.5-flash") 
-        """("gemini-pro")"""
+        # 利用可能なモデルをリストして、利用可能なモデル名を選ぶ
+        try:
+            available_models = genai.list_models()
+        except Exception:
+            available_models = None
+
+        chosen_model_name = None
+        if available_models:
+            # available_models の各要素の形状は環境により異なる（dict またはオブジェクト）ため
+            # 柔軟に name を取り出す
+            for m in available_models:
+                name = None
+                if isinstance(m, dict):
+                    name = m.get('name') or m.get('model')
+                else:
+                    name = getattr(m, 'name', None) or getattr(m, 'model', None)
+                if not name:
+                    continue
+                # 'gemini' を含むモデルを優先して選択
+                if 'gemini' in name:
+                    chosen_model_name = name
+                    break
+            # なければ最初のモデルを候補とする
+            if chosen_model_name is None and len(available_models) > 0:
+                m = available_models[0]
+                if isinstance(m, dict):
+                    chosen_model_name = m.get('name') or m.get('model')
+                else:
+                    chosen_model_name = getattr(m, 'name', None) or getattr(m, 'model', None)
+
+        # デフォルトのハードコードを置いておきつつ、上で見つかったら置き換える
+        default_model = "gemini-1.5-flash"
+        model_to_use = chosen_model_name or default_model
+        try:
+            self.gemini_model = genai.GenerativeModel(model_to_use)
+        except Exception as e:
+            # 最後の手段として None にしておき、呼び出し側で再試行ロジックを動かす
+            print("Warning: could not initialize GenerativeModel with", model_to_use, e)
+            self.gemini_model = None
 
     def connect_to_gspread(self):
         """
@@ -82,7 +119,20 @@ class BlueSkyBot:
         weather_data = urllib.request.urlopen(url).read()
         weather_info = json.loads(weather_data.decode("utf-8"))[0]["timeSeries"][0]["areas"][0]["weathers"][0]
         weather_info = weather_info.replace("\u3000", " ")
-        return f'\n和歌山北部の天気: {weather_info}\n'
+
+        try:
+            # weather_data は生のJSONバイト列なので、人が読む説明を作る際は
+            # 既に整形した weather_info（文字列）を渡す方が安全です。
+            japanese_weather_message = self.generate_description(
+                weather_info,
+                "あなたはわかりやすい解説で有名な天気予報士です、このJSONデータをもとに、今日の天気をできるだけ詳しく150文字以内で説明してください、データについての説明や、データの内容を回答にふくめないでください"
+            )
+        except Exception as e:
+            # 生成に失敗した場合は例外内容をログに出し、フォールバックの文言を設定する
+            print("Retry:Generate description\n", e)
+            japanese_weather_message = "天気情報の要約を生成できませんでした。"
+
+        return f"\n和歌山北部の天気: {japanese_weather_message}\n"
 
     def fetch_trending_keywords(self):
         """
@@ -151,9 +201,77 @@ class BlueSkyBot:
         Returns:
             str: 解説の文字列
         """
-        prompt = f"{term}について500文字以内で説明してください。 {additional_instructions}"
-        response = self.gemini_model.generate_content(prompt)
-        return f"【{term} について】\n{response.text}\n"
+        prompt = f"{term} {additional_instructions}"
+        # self.gemini_model が None の場合や generate_content が失敗した場合に備えて
+        # 再試行とフォールバックを実装する
+        last_exception = None
+        # 優先: 現在のモデル、次に list_models() で見つけた候補
+        candidates = []
+        if self.gemini_model is not None:
+            candidates.append(self.gemini_model)
+
+        try:
+            models = genai.list_models()
+            for m in models:
+                name = None
+                if isinstance(m, dict):
+                    name = m.get('name') or m.get('model')
+                else:
+                    name = getattr(m, 'name', None) or getattr(m, 'model', None)
+                if not name:
+                    continue
+                try:
+                    candidates.append(genai.GenerativeModel(name))
+                except Exception:
+                    continue
+        except Exception:
+            # list_models が失敗しても実行は継続
+            pass
+
+        import time
+        for candidate in candidates:
+            # 簡易的にモデル名に 'embed' や 'embedding' を含むものはスキップ（generate_content をサポートしない可能性が高い）
+            try:
+                model_name = None
+                if hasattr(candidate, 'model'):
+                    model_name = getattr(candidate, 'model')
+                elif hasattr(candidate, 'name'):
+                    model_name = getattr(candidate, 'name')
+                elif hasattr(candidate, '__class__'):
+                    model_name = str(candidate)
+                if model_name and ('embed' in model_name.lower() or 'embedding' in model_name.lower()):
+                    print("Skipping embedding model candidate:", model_name)
+                    continue
+            except Exception:
+                # 名前の取得に失敗しても試行は続ける
+                pass
+
+            # 429 などの一時的エラーにはバックオフして複数回リトライ
+            attempt = 0
+            max_attempts = 3
+            backoff = 1.0
+            while attempt < max_attempts:
+                try:
+                    response = candidate.generate_content(prompt)
+                    return f"{response.text}\n"
+                except Exception as e:
+                    last_exception = e
+                    msg = str(e)
+                    # 429 の場合は待って再試行
+                    if '429' in msg or 'quota' in msg.lower():
+                        wait = backoff
+                        print(f"Quota/error from model, backing off {wait}s and retrying... ({attempt+1}/{max_attempts})")
+                        time.sleep(wait)
+                        backoff *= 2
+                        attempt += 1
+                        continue
+                    else:
+                        print("generate_content failed for candidate, trying next:", e)
+                        break
+
+        # ここまで到達したら全て失敗 -> 安全なフォールバックメッセージを返す
+        print("All model attempts failed. Returning fallback message.")
+        return "天気情報の要約を生成できませんでした。しばらくしてから再度お試しください。\n"
 
     def post_to_bluesky(self, message):
         """
@@ -180,7 +298,7 @@ class BlueSkyBot:
         # candidate.safety_ratings で不適切である場合はリトライ
         for _ in range(3):  
             try:
-                japanese_quote_message = self.generate_description(self.fetch_japanese_quote(), "ポジティブな言葉で元気が出る解説をしてください。質問の言葉を解答から除いてください")
+                japanese_quote_message = self.generate_description(self.fetch_japanese_quote(), "質問の言葉を含めて150文字以内でポジティブな言葉で元気が出る解説をしてください。")
             except Exception as e:
                 print("Retry:Generate description\n")
             else:
