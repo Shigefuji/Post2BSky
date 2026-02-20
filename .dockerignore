@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+env/
+secrets.json
+credentials.json
+*.pem
+.git
+.gitignore
+Dockerfile
+build/
+dist/
