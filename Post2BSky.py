@@ -9,17 +9,23 @@ import yfinance as yf
 from pytrends.request import TrendReq
 from atproto import Client
 import feedparser
+import os
 
 class BlueSkyBot:
-    def __init__(self, config_file):
+    def __init__(self, config=None, config_file=None):
         """
         コンストラクタ：設定ファイルを読み込み、各APIの初期化を行います。
 
         Args:
             config_file (str): 設定ファイルのパス
         """
-        with open(config_file, 'r') as file:
-            self.config = json.load(file)
+        if config_file:
+            with open(config_file, 'r') as file:
+                self.config = json.load(file)
+        elif config:
+            self.config = config
+        else:
+            raise ValueError("Either config or config_file must be provided")
         self.api_client = Client(base_url='https://bsky.social')
         self.api_client.login(self.config['username'], self.config['password'])
         #self.trends_client = TrendReq(hl='ja-JP', tz=-540)
@@ -321,5 +327,9 @@ class BlueSkyBot:
         print(japanese_quote_message)
         
 if __name__ == "__main__":
-    bot = BlueSkyBot('.env.local')
+    # 本番環境では .env.local が存在しないので、環境変数経由で設定を読み込む
+    if os.path.exists('.env.local'):
+        bot = BlueSkyBot(config_file='.env.local')
+    else:
+        bot = BlueSkyBot()
     bot.run()

@@ -1,0 +1,36 @@
+{
+  "components": [
+    {
+      "data": {
+        "contents_checksum": "eee82cd34806ce26487960b9cf1705786ccf975d34390b179f7b89307dc51044",
+        "source": "",
+        "type": "tar"
+      },
+      "dependencies": [
+        "core"
+      ],
+      "details": {
+        "description": "Beta version of gcloud commands.",
+        "display_name": "gcloud Beta Commands"
+      },
+      "gdu_only": false,
+      "id": "beta",
+      "is_configuration": false,
+      "is_hidden": false,
+      "is_required": false,
+      "platform": {},
+      "platform_required": false,
+      "version": {
+        "build_number": 20260309182415,
+        "version_string": "2026.03.09"
+      }
+    }
+  ],
+  "revision": 20260309182415,
+  "schema_version": {
+    "no_update": false,
+    "url": "https://dl.google.com/dl/cloudsdk/channels/rapid/google-cloud-sdk.tar.gz",
+    "version": 3
+  },
+  "version": "560.0.0"
+}

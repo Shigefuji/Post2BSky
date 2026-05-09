@@ -20,5 +20,5 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 # Copy project
 COPY . /app
 
-# Default command: run the bot script
+# Default command: run the bot script (for Cloud Run Jobs)
 CMD ["python", "Post2BSky.py"]
